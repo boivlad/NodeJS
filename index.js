@@ -7,7 +7,7 @@ app.use(bodyParser.json());
 const products = [
 {
 	id: 1,
-	name: 'phone1',
+	name: 'phone2',
 	price: 300,
 },
 {
