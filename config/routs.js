@@ -10,5 +10,5 @@ module.exports = (app) => {
 	//auth
 	app.post('/signin', auth.signIn);
 	app.post('/registration', auth.registration);
-	app.put('/activate/:email', auth.activate);
+	app.get('/activate/:email', auth.activate);
 };
