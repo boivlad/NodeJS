@@ -1,3 +1,4 @@
+const uuid = require('uuid/v4');
 const mongoose = require('mongoose');
 const bCrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -8,6 +9,7 @@ const { secret } = require('../../config/app').jwt;
 const User = mongoose.model('User');
 const Token = mongoose.model('Token');
 
+const reg = /[a-zA-Z_0-9]+/ ;
 const updateTokens = (userId) => {
 	const accessToken = authHelper.generateAccessToken(userId);
 	const refreshToken = authHelper.generateRefreshToken();
@@ -27,11 +29,16 @@ const signIn = (req, res) => {
 			if(!user){
 				res.status(401).json({ message: 'Пользователь не существует' });
 			}
-			const isValid = bCrypt.compareSync(password, user.password);
-			if(isValid) {
-				updateTokens(user._id).then(tokens => res.json(tokens));
-			} else {
-				res.status(401).json({ message: 'Введены неверные данные' });
+			if(user.status != "1"){
+				res.status(401).json({ message: 'Ваш аккаунт не активирован, проверьте почту' });
+			}
+			else {
+				const isValid = bCrypt.compareSync(password, user.password);
+				if(isValid) {
+					updateTokens(user._id).then(tokens => res.json(tokens));
+				} else {
+					res.status(401).json({ message: 'Введены неверные данные' });
+				}
 			}
 
 		})
@@ -43,30 +50,35 @@ const registration = (req, res) => {
 	.exec()
 	.then((user) => {
 		if(!user){
-			User.create({
-				login: login,
-				email: email,
-				password: bCrypt.hashSync(password, 10),
-				phone: phone,
-			});
-			var transporter = nodemailer.createTransport({
-			service: 'Gmail',
-			auth: {
-				user: 'vladyslav.boichenko@482.solutions',
-				pass: '392781Vs'
+			if(login.match(reg)[0] !== login)
+				res.status(401).json({ message: 'Вы ввели логин неверного формата' });
+			else
+				if(password.match(reg)[0] !== password)
+					res.status(401).json({ message: 'Вы ввели пароль неверного формата' });
+			else {
+				User.create({
+					login: login,
+					email: email,
+					password: bCrypt.hashSync(password, 10),
+					phone: phone,
+				});
+				var transporter = nodemailer.createTransport({
+				service: 'Gmail',
+				auth: {
+					user: 'vladyslav.boichenko@482.solutions',
+					pass: '392781Vs'
+				}
+				});
+				transporter.sendMail({
+				from: 'vladyslav.boichenko@482.solutions',
+				to: email,
+				subject: 'hello world!',
+				html: `<h1>Вы зарегистрировались</h1><p>Для активации аккаунта ${login} перейдите по ссылке 127.0.0.1:3000/activate/${email}</p>`
+				});
+				res.json({ success: true });
 			}
-			});
-
-			console.log('created');
-			transporter.sendMail({
-			from: 'vladyslav.boichenko@482.solutions',
-			to: email,
-			subject: 'hello world!',
-			html: `<h1>Вы зарегистрировались</h1><p>Для активации аккаунта ${login} перейдите по ссылке 127.0.0.1:3000/activate/${email}</p>`
-			});
-			res.json({ success: true });
 		}else {
-			res.status(401).json({ message: 'Пользователь под данной почтой уже зарегистрирован!' });
+			res.status(401).json({ message: 'Пользователь под данной почтой или именем пользователя уже зарегистрирован!' });
 		}
 	})
 	.catch(err => res.status(500).json(err));
@@ -85,16 +97,23 @@ const activate = (req, res) => {
 	.catch(err => res.status(500).json(err))
 };
 const update = (req, res) => {
-	User.findOneAndUpdate({$and : [{email: req.params.email}, {status: "0"}]}, {status: 1})
+	if("password" in req.body)
+		req.body.password = bCrypt.hashSync(req.body.password, 10);
+	User.findOneAndUpdate({_id: req.params.id}, req.body)
 	.exec()
-	.then((user) => {
-		if(user) {
-			res.json({ message: "Ваш аккаунт активирован" });
-		}
-		else {
-			res.json({ message: "Ваш аккаунт уже активирован" });
-		}
+	.then(user => {
+		if(user != null)
+
+			res.json({ success: true })
+		else
+			res.status(401).json({ message: 'Пользователь не найден!' });
 	})
+	.catch(err => res.status(500).json(err))
+};
+const remove = (req, res) => {
+	User.deleteOne({_id: req.params.id})
+	.exec()
+	.then((user) =>res.json({ success: true }))
 	.catch(err => res.status(500).json(err))
 };
 const refreshTokens = (req, res) => {
@@ -134,4 +153,6 @@ module.exports = {
 	registration,
 	activate,
 	refreshTokens,
+	update,
+	remove,
 }
