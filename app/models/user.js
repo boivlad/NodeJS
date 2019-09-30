@@ -21,4 +21,4 @@ const UserSchema = new mongoose.Schema({
 		default: 0
 	}
 });
-const Product = mongoose.model('User', UserSchema);
+mongoose.model('User', UserSchema);
