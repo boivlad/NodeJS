@@ -1,8 +1,8 @@
-const uuid = require('uuid/v4');
-const jwt = require('jsonwebtoken');
-const { secret, tokens } = require('../../config/app').jwt;
-const mongoose = require('mongoose');
-
+import uuid from 'uuid/v4';
+import jwt from 'jsonwebtoken';
+import {app} from "../config";
+const {secret, tokens } = app.jwt;
+import mongoose from 'mongoose';
 const Token = mongoose.model('Token');
 
 const generateAccessToken = (userId) => {

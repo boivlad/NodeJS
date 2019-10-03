@@ -1,16 +1,19 @@
-const uuid = require('uuid/v4');
-const mongoose = require('mongoose');
-const bCrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const authHelper = require('../helpers/authHelper');
-const nodemailer = require('nodemailer');
-const { secret } = require('../../config/app').jwt;
+import express from "express";
+import mongoose from 'mongoose';
+import bCrypt from'bcrypt';
+import jwt from'jsonwebtoken';
+import authHelper from '../functions/authToken';
+import nodemailer from 'nodemailer';
 
 const User = mongoose.model('User');
 const Token = mongoose.model('Token');
 
 const reg = /[a-zA-Z_0-9]+/ ;
+
+const router = express.Router();
+
 const updateTokens = (userId) => {
+
 	const accessToken = authHelper.generateAccessToken(userId);
 	const refreshToken = authHelper.generateRefreshToken();
 
@@ -19,6 +22,7 @@ const updateTokens = (userId) => {
 			accessToken,
 			refreshToken: refreshToken.token,
 		}));
+
 };
 
 const signIn = (req, res) => {
@@ -44,6 +48,7 @@ const signIn = (req, res) => {
 		})
 		.catch(err => res.status(500).json({ message: err.message }));
 };
+
 const registration = (req, res) => {
 	const { login, email, password, phone } = req.body;
 	User.findOne({$or : [ {login}, {email} ]})
@@ -83,6 +88,7 @@ const registration = (req, res) => {
 	})
 	.catch(err => res.status(500).json(err));
 };
+
 const activate = (req, res) => {
 	User.findOneAndUpdate({$and : [{email: req.params.email}, {status: "0"}]}, {status: 1})
 	.exec()
@@ -96,6 +102,7 @@ const activate = (req, res) => {
 	})
 	.catch(err => res.status(500).json(err))
 };
+
 const update = (req, res) => {
 	if("password" in req.body)
 		req.body.password = bCrypt.hashSync(req.body.password, 10);
@@ -110,12 +117,14 @@ const update = (req, res) => {
 	})
 	.catch(err => res.status(500).json(err))
 };
+
 const remove = (req, res) => {
 	User.deleteOne({_id: req.params.id})
 	.exec()
 	.then((user) =>res.json({ success: true }))
 	.catch(err => res.status(500).json(err))
 };
+
 const refreshTokens = (req, res) => {
 	const { refreshToken } = req.body;
 	let payload;
@@ -148,11 +157,12 @@ const refreshTokens = (req, res) => {
 	.then(tokens => res.json(tokens))
 	.catch(err => res.status(400).json({message: err.message}));
 };
-module.exports = {
-	signIn,
-	registration,
-	activate,
-	refreshTokens,
-	update,
-	remove,
-}
+
+router.post('/signin', signIn);
+router.post('/registration', registration);
+router.get('/activate/:email', activate);
+router.put('/user-update/:id', update);
+router.post('/refresh-tokens', refreshTokens);
+router.delete('/remove/:id',remove);
+
+export default router;
