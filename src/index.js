@@ -1,15 +1,26 @@
 import express from 'express'
 import mongoose from "mongoose";
-import'./models';
-import bodyParser from "body-parser";
-import {app as configApp} from "./config";
-import { auth } from "./routes";
-const app = express()
+import './models';
+import bodyParser from 'body-parser';
+import {
+	app as configApp
+} from './config';
+import {
+	auth
+} from './routes';
+const app = express();
 app.use(bodyParser.json());
 app.use('/', auth);
-const { appPort, mongoUri } = configApp;
+const {
+	appPort,
+	mongoUri
+} = configApp;
 mongoose
-	.connect(mongoUri)
+	.connect(mongoUri, {
+		useFindAndModify: false,
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+	})
 	.then(() => {
 		app.listen(
 			appPort,
