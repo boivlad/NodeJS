@@ -1,7 +1,6 @@
 {
   "name": "nodejs",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "dependencies": {
     "bcrypt": "^3.0.6",
@@ -13,14 +12,25 @@
     "uuid": "^3.3.3"
   },
   "devDependencies": {
-    "eslint": "^6.4.0",
+    "@babel/cli": "^7.6.2",
+    "@babel/core": "^7.6.2",
+    "@babel/node": "^7.6.2",
+    "@babel/preset-env": "^7.6.2",
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb": "^18.0.1",
     "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.14.3",
+    "eslint-plugin-react-hooks": "^1.7.0",
     "nodemon": "^1.19.2"
   },
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "nodemon --watch src --exec babel-node -- src/index.js",
     "lint-me": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "babel-node": "babel-node",
+    "build": "babel src -d dist --presets @babel/env",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -31,5 +41,7 @@
   "bugs": {
     "url": "https://github.com/boivlad/NodeJS/issues"
   },
-  "homepage": "https://github.com/boivlad/NodeJS#readme"
+  "homepage": "https://github.com/boivlad/NodeJS#readme",
+  "keywords": [],
+  "description": ""
 }
