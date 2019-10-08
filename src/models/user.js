@@ -22,8 +22,8 @@ const UserSchema = new mongoose.Schema({
 	},
 
 	status: {
-		type: String,
-		default: 0,
+		type: Boolean,
+		default: false,
 	}
 });
 

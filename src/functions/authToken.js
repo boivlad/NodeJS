@@ -1,13 +1,10 @@
 import uuid from 'uuid/v4';
 import jwt from 'jsonwebtoken';
-import {
-	app
-} from '../config';
-const {
-	secret,
-	tokens
-} = app.jwt;
 import mongoose from 'mongoose';
+import { app } from '../config';
+
+const { secret, tokens } = app.jwt;
+
 const Token = mongoose.model('Token');
 
 const generateAccessToken = (userId) => {
@@ -16,9 +13,7 @@ const generateAccessToken = (userId) => {
 		type: tokens.access.type,
 	};
 
-	const options = {
-		expiresIn: tokens.access.expiresIn
-	};
+	const options = { expiresIn: tokens.access.expiresIn };
 	return jwt.sign(payload, secret, options);
 };
 
@@ -28,22 +23,20 @@ const generateRefreshToken = () => {
 		type: tokens.refresh.type,
 	};
 
-	const options = {
-		expiresIn: tokens.refresh.expiresIn
-	};
+	const options = { expiresIn: tokens.refresh.expiresIn };
 	return {
 		id: payload.id,
 		token: jwt.sign(payload, secret, options),
 	};
 };
 
-const replaceDbRefreshToken = (tokenId, userId) => (
-	Token.findByIdAndRemove(userId)
-	.exec()
-	.then(() => Token.create({
+const replaceDbRefreshToken = async (tokenId, userId) => {
+	await Token.findByIdAndRemove(userId);
+	Token.create({
 		tokenId,
-		userId
-	})));
+		userId,
+	});
+};
 
 export default {
 	generateAccessToken,
