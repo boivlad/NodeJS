@@ -97,7 +97,7 @@ const registration = async (req, res) => {
 				from: 'vladyslav.boichenko@482.solutions',
 				to: email,
 				subject: 'hello world!',
-				html: `<h1>Вы зарегистрировались</h1><p>Для активации аккаунта ${login} перейдите по ссылке 127.0.0.1:3000/activate/${email}</p>`,
+				html: `<h1>Вы зарегистрировались</h1><p>Для активации аккаунта ${login} перейдите по ссылке 127.0.0.1:3000/api/v1/user/${email}</p>`,
 			});
 			res.status(401).json({ message: 'Registration successful!' });
 			return;
@@ -170,7 +170,7 @@ const refreshTokens = async (req, res) => {
 		res.status(400).json({ message: 'Invalid Token' });
 	}
 };
-
+router.get('/user/:id', update);
 router.post('/auth', auth);
 router.post('/user', registration);
 router.put('/user/:id', update);
