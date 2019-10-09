@@ -10,7 +10,6 @@ import authHelper from '../functions';
 const User = mongoose.model('User');
 const Token = mongoose.model('Token');
 
-// const regLoginPassword = /^.*[^A-z_1-9].*$/gm;
 const regLoginPassword = /^[A-z_1-9]*$/gm;
 
 const router = express.Router();
