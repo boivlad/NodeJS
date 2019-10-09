@@ -10,7 +10,8 @@ import authHelper from '../functions';
 const User = mongoose.model('User');
 const Token = mongoose.model('Token');
 
-const regLoginPassword = /^.*[^A-z_1-9].*$/gm;
+// const regLoginPassword = /^.*[^A-z_1-9].*$/gm;
+const regLoginPassword = /^[A-z_1-9]*$/gm;
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ const auth = async (req, res) => {
 	try {
 		const { login, password } = req.body;
 
-		if (regLoginPassword.test(password)) {
+		if (!regLoginPassword.test(password)) {
 			res.status(401).json({ message: 'You entered an incorrect password' });
 			return;
 		}
@@ -63,46 +64,46 @@ const registration = async (req, res) => {
 	try{
 		const { login, email, password, phone } = req.body;
 		const user = await User.findOne({ $or: [{ login }, { email }] })
-		if (regLoginPassword.test(login)) {
+		if (!regLoginPassword.test(login)) {
 			res.status(401).json({ message: 'You entered an incorrect format login' });
 			return;
 		}
 
-		if (regLoginPassword.test(password)) {
+		if (!regLoginPassword.test(password)) {
 			res.status(401).json({ message: 'You entered an incorrect password' });
 			return;
 		}
 
-		if (!user) {
-			const newUser = await User.create({
-				login: login,
-				email: email,
-				password: bCrypt.hashSync(password, 10),
-				phone: phone,
-			});
-
-			if(!newUser){
-				res.status(401).json({ message: 'An error occurred while registering.' });
-				return;
-			}
-
-			const transporter = nodemailer.createTransport({
-				service: 'Gmail',
-				auth: {
-					user: 'vladyslav.boichenko@482.solutions',
-					pass: '392781Vs',
-				},
-			});
-			transporter.sendMail({
-				from: 'vladyslav.boichenko@482.solutions',
-				to: email,
-				subject: 'hello world!',
-				html: `<h1>Вы зарегистрировались</h1><p>Для активации аккаунта ${login} перейдите по ссылке 127.0.0.1:3000/api/v1/user/${email}</p>`,
-			});
-			res.status(401).json({ message: 'Registration successful!' });
+		if (user) {
+			res.status(401).json({ message: 'A user with this mail or username is already registered!' });
 			return;
 		}
-		res.status(401).json({ message: 'A user with this mail or username is already registered!' });
+		const newUser = await User.create({
+			login: login,
+			email: email,
+			password: bCrypt.hashSync(password, 10),
+			phone: phone,
+		});
+
+		if(!newUser) {
+			res.status(401).json({ message: 'An error occurred while registering.' });
+			return;
+		}
+
+		const transporter = nodemailer.createTransport({
+			service: 'Gmail',
+			auth: {
+				user: 'vladyslav.boichenko@482.solutions',
+				pass: '392781Vs',
+			},
+		});
+		transporter.sendMail({
+			from: 'vladyslav.boichenko@482.solutions',
+			to: email,
+			subject: 'hello world!',
+			html: `<h1>Вы зарегистрировались</h1><p>Для активации аккаунта ${login} перейдите по ссылке 127.0.0.1:3000/api/v1/user/${email}</p>`,
+		});
+		res.status(401).json({ message: 'Registration successful!' });
 	} catch (err) {
 		res.status(500).json(err);
 	}
