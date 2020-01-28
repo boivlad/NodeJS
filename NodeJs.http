@@ -1,0 +1,45 @@
+POST localhost:3000/api/v1/user/
+Content-Type: application/json
+
+{
+  "login": "boivlad",
+  "email": "boyvlad99@gmail.com",
+  "password": "123456789a",
+  "phone": "+380965870700"
+}
+
+###
+GET localhost:3000/api/v1/user/boyvlad99@gmail.com1sqwdwefwefwefwefwefwefwef
+Content-Type: application/json
+
+###
+
+PUT localhost:3000/api/v1/user/5e301c85a0525a34206ea844
+Content-Type: application/json
+
+{
+  "phone": "+380965870700"
+}
+###
+
+POST localhost:3000/api/v1/auth/
+Content-Type: application/json
+
+{
+  "login": "boivlad",
+  "password": "123456789a"
+}
+
+###
+PUT localhost:3000/api/v1/tokens/
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjM4MjBmYjc4LTE4MWYtNGUxNi04MGY0LWMwNDlkNzlhOGU5OSIsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNTgwMjE0OTc3LCJleHAiOjE1ODAyMTUxNTd9.x_6eK-7jIiYgW_W_b9l-HGEP-VhhPUaLUQCSVvdq_Jg"
+}
+
+###
+DELETE localhost:3000/api/v1/user/5e301c85a0525a34206ea844
+Content-Type: application/json
+
+###
