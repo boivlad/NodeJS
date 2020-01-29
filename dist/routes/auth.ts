@@ -1,30 +1,39 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import bCrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
-import { config } from '../config';
+import { JWTConfig } from '../config';
 import { authToken } from '../functions';
 
-const { secret } = config.jwt;
+const jwtConfig = new JWTConfig;
+const secret: string = jwtConfig.secret;
 
+type TokenObject = {
+  id: string,
+  token: string
+}
+type TokenPair = {
+  accessToken: string,
+  refreshToken: string
+}
 const User = mongoose.model('User');
 const Token = mongoose.model('Token');
 
 const router = express.Router();
 
-const updateTokens = async (userId: string) => {
-  const accessToken: string = authToken.generateAccessToken(userId);
-  const refreshToken: any = authToken.generateRefreshToken();
+const updateTokens = async (userId: string): Promise<TokenPair> => {
+  const accessToken: TokenObject = authToken.generateAccessToken(userId);
+  const refreshToken: TokenObject = authToken.generateRefreshToken();
 
   await authToken.replaceDbRefreshToken(refreshToken.id, userId);
   return {
-    accessToken,
+    accessToken: accessToken.token,
     refreshToken: refreshToken.token,
   };
 };
 
-const auth = async (req: any, res: any) => {
+const auth = async (req: Request, res: Response): Promise<void> => {
   const { login, password } = req.body;
 
   if (!login.match(/^[a-z_1-9]*$/gm)) {
@@ -55,11 +64,10 @@ const auth = async (req: any, res: any) => {
   }
 };
 
-const registration = async (req: any, res: any) => {
+const registration = async (req: Request, res: Response) => {
   try {
     const { login, email, password, phone } = req.body;
     const user = await User.findOne({ $or: [{ login }, { email }] });
-    console.log();
     if (!login.match(/^[a-z_1-9]*$/gm)) {
       res.status(401).send('You entered an incorrect format login');
       return;
@@ -107,7 +115,7 @@ const registration = async (req: any, res: any) => {
   }
 };
 
-const update = async (req: any, res: any) => {
+const update = async (req: Request, res: Response): Promise<void> => {
   if (!req.headers['content-length']) {
     const user = await User.findOneAndUpdate({ $and: [{ email: req.params.id }, { status: false }] },
       { status: true });
@@ -134,7 +142,7 @@ const update = async (req: any, res: any) => {
   }
 };
 
-const remove = async (req: any, res: any) => {
+const remove = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await User.deleteOne({ _id: req.params.id });
     if (!!result.deletedCount) {
@@ -147,23 +155,21 @@ const remove = async (req: any, res: any) => {
   }
 };
 
-const refreshTokens = async (req: any, res: any) => {
+const refreshTokens = async (req: Request, res: Response):Promise<void> => {
   const { refreshToken } = req.body;
-  let payload: any;
   try {
-    payload = jwt.verify(refreshToken, secret);
-    if (payload.type !== 'refresh') {
+    const decodeToken: any = jwt.verify(refreshToken, secret);
+    if (decodeToken.type !== 'refresh') {
       res.status(400).send('Invalid Token');
       return;
     }
-    const token: any = await Token.findOne({ tokenId: payload.id });
-
+    const token: any = await Token.findOne({ tokenId: decodeToken.id });
     if (!token) {
       res.status(400).send('Invalid Token');
       return;
     }
-    const tokens = await updateTokens(token.userId);
-    res.status(200).send(tokens);
+    const tokens: TokenPair = await updateTokens(token.userId);
+    res.status(200).json(tokens);
   } catch (e) {
     if (e instanceof jwt.TokenExpiredError) {
       res.status(400).send('Token is deprecated');

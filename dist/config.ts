@@ -1,18 +1,17 @@
-export const config: any = {
-  appPort: 3000,
-  mongoUri: 'mongodb://localhost:27017/nodejs',
-  jwt: {
-    secret: 'SecretKeyForAuth',
-    tokens: {
-      access: {
-        type: 'access',
-        expiresIn: '2m',
-      },
+export type tokenConfig = {
+  type: string,
+  expiresIn: string
+}
 
-      refresh: {
-        type: 'refresh',
-        expiresIn: '3m',
-      },
-    },
-  },
-};
+export class JWTConfig {
+  readonly secret: string = 'SecretKeyForAuth';
+  readonly access: tokenConfig = {
+    type: 'access',
+    expiresIn: '2m',
+  };
+
+  readonly refresh: tokenConfig = {
+    type: 'refresh',
+    expiresIn: '3m',
+  };
+}
