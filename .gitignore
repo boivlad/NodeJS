@@ -1,9 +1,5 @@
-.vscode/*
-.vscode/settings.json
-.vscode/tasks.json
-.vscode/launch.json
-.vscode/extensions.json
-node_modules/
-.eslintrc.json
-.babelrc
+.idea
+node_modules
 package-lock.json
+src
+.env
