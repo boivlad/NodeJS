@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import { JWTConfig } from '../config';
 import { authToken } from '../functions';
+import { IToken } from '../models/token';
+import { IUser } from '../models/user';
 
 const jwtConfig = new JWTConfig;
 const secret: string = jwtConfig.secret;
@@ -16,6 +18,10 @@ type TokenObject = {
 type TokenPair = {
   accessToken: string,
   refreshToken: string
+}
+type JWTDecode = {
+  id: string,
+  type: string,
 }
 const User = mongoose.model('User');
 const Token = mongoose.model('Token');
@@ -42,7 +48,7 @@ const auth = async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    const user: any = await User.findOne({ $or: [{ email: login }, { login: login }] });
+    const user: IUser = <IUser>await User.findOne({ $or: [{ email: login }, { login: login }] });
     if (!user) {
       res.status(401).send('User does not exist');
       return;
@@ -52,9 +58,9 @@ const auth = async (req: Request, res: Response): Promise<void> => {
       res.status(401).send('Your account is not activated, check your mail');
       return;
     }
-    const isValid = bCrypt.compareSync(password, user.password);
+    const isValid = bCrypt.compareSync(password, user.password!);
     if (isValid) {
-      const tokens = await updateTokens(user._id);
+      const tokens: TokenPair = await updateTokens(user._id);
       res.status(200).json(tokens);
       return;
     }
@@ -67,7 +73,7 @@ const auth = async (req: Request, res: Response): Promise<void> => {
 const registration = async (req: Request, res: Response) => {
   try {
     const { login, email, password, phone } = req.body;
-    const user = await User.findOne({ $or: [{ login }, { email }] });
+    const user: IUser = <IUser>await User.findOne({ $or: [{ login }, { email }] });
     if (!login.match(/^[a-z_1-9]*$/gm)) {
       res.status(401).send('You entered an incorrect format login');
       return;
@@ -82,7 +88,7 @@ const registration = async (req: Request, res: Response) => {
       res.status(401).send('A user with this mail or username is already registered!');
       return;
     }
-    const newUser = await User.create({
+    const newUser: IUser = await User.create({
       login: login,
       email: email,
       password: bCrypt.hashSync(password, 10),
@@ -116,8 +122,9 @@ const registration = async (req: Request, res: Response) => {
 };
 
 const update = async (req: Request, res: Response): Promise<void> => {
+  let user: IUser;
   if (!req.headers['content-length']) {
-    const user = await User.findOneAndUpdate({ $and: [{ email: req.params.id }, { status: false }] },
+    user = <IUser>await User.findOneAndUpdate({ $and: [{ email: req.params.id }, { status: false }] },
       { status: true });
     if (user) {
       res.status(202).send('Your account has been activated.');
@@ -130,7 +137,7 @@ const update = async (req: Request, res: Response): Promise<void> => {
     req.body.password = bCrypt.hashSync(req.body.password, 10);
   }
   try {
-    const user = await User.findOneAndUpdate({ _id: req.params.id }, req.body);
+    user = <IUser>await User.findOneAndUpdate({ _id: req.params.id }, req.body);
     if (user) {
       res.status(202).send('Your account is updated successfully');
       return;
@@ -144,8 +151,8 @@ const update = async (req: Request, res: Response): Promise<void> => {
 
 const remove = async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await User.deleteOne({ _id: req.params.id });
-    if (!!result.deletedCount) {
+    const result: { deletedCount?: number | undefined; } = await User.deleteOne({ _id: req.params.id });
+    if (!!result.deletedCount!) {
       res.status(200).send('Account has been successfully deleted.');
       return;
     }
@@ -154,21 +161,21 @@ const remove = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json(err);
   }
 };
-
-const refreshTokens = async (req: Request, res: Response):Promise<void> => {
+const refreshTokens = async (req: Request, res: Response): Promise<void> => {
   const { refreshToken } = req.body;
   try {
-    const decodeToken: any = jwt.verify(refreshToken, secret);
+    const decodeToken: JWTDecode = <JWTDecode>jwt.verify(refreshToken, secret);
     if (decodeToken.type !== 'refresh') {
       res.status(400).send('Invalid Token');
       return;
     }
-    const token: any = await Token.findOne({ tokenId: decodeToken.id });
+
+    const token: IToken = <IToken>await Token.findOne({ tokenId: decodeToken.id });
     if (!token) {
       res.status(400).send('Invalid Token');
       return;
     }
-    const tokens: TokenPair = await updateTokens(token.userId);
+    const tokens: TokenPair = await updateTokens(token.userId!);
     res.status(200).json(tokens);
   } catch (e) {
     if (e instanceof jwt.TokenExpiredError) {
